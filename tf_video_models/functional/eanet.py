@@ -1,4 +1,4 @@
-import tensorlfow as tf
+import tensorflow as tf
 from tensorflow.keras import layers
 from .mlp import mlp
 
@@ -8,12 +8,12 @@ def external_attention(
 ):
     _, num_patch, channel = x.shape
     assert dim % num_heads == 0
-    num_heads = num_heads * dim_coefficient
+    num_heads = int(num_heads * dim_coefficient)
 
     x = layers.Dense(dim * dim_coefficient)(x)
     # create tensor [batch_size, num_patches, num_heads, dim*dim_coefficient//num_heads]
     x = tf.reshape(
-        x, shape=(-1, num_patch, num_heads, dim * dim_coefficient // num_heads)
+        x, shape=(-1, num_patch, num_heads, int(dim * dim_coefficient // num_heads))
     )
     x = tf.transpose(x, perm=[0, 2, 1, 3])
     # a linear layer M_k
@@ -26,7 +26,7 @@ def external_attention(
     # a linear layer M_v
     x = layers.Dense(dim * dim_coefficient // num_heads)(attn)
     x = tf.transpose(x, perm=[0, 2, 1, 3])
-    x = tf.reshape(x, [-1, num_patch, dim * dim_coefficient])
+    x = tf.reshape(x, [-1, num_patch, int(dim * dim_coefficient)])
     # a linear layer to project original dim
     x = layers.Dense(dim)(x)
     x = layers.Dropout(projection_dropout)(x)
