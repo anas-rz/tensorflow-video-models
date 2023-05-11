@@ -33,27 +33,29 @@ def external_attention(
     return x
 
 def ea_encoder(
-    x,
     embedding_dim,
     mlp_dim,
     num_heads,
     dim_coefficient,
     attention_dropout,
     projection_dropout,
+    **kwargs
 ):
-    residual_1 = x
-    x = layers.LayerNormalization(epsilon=1e-5)(x)
-    x = external_attention(
-        x,
-        embedding_dim,
-        num_heads,
-        dim_coefficient,
-        attention_dropout,
-        projection_dropout,
-    )
-    x = layers.add([x, residual_1])
-    residual_2 = x
-    x = layers.LayerNormalization(epsilon=1e-5)(x)
-    x = mlp(x, embedding_dim, mlp_dim)
-    x = layers.add([x, residual_2])
-    return x
+    def _apply(x):
+        residual_1 = x
+        x = layers.LayerNormalization(epsilon=1e-5)(x)
+        x = external_attention(
+            x,
+            embedding_dim,
+            num_heads,
+            dim_coefficient,
+            attention_dropout,
+            projection_dropout,
+        )
+        x = layers.add([x, residual_1])
+        residual_2 = x
+        x = layers.LayerNormalization(epsilon=1e-5)(x)
+        x = mlp(x, embedding_dim, mlp_dim)
+        x = layers.add([x, residual_2])
+        return x
+    return _apply
